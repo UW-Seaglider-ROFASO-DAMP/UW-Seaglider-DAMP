@@ -1,7 +1,8 @@
-% Seaglider DAMP
+%% Seaglider DAMP
 % Description: Damage Analysis and Mitigation Protocol for Seaglider
-% Authors 
-% Updates
+%% Authors
+% Henry Hong
+%% Updates
 
 %% Clears
 
