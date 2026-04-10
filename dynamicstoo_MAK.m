@@ -164,7 +164,7 @@ Torques = [Mp; Mq; Mr];
 % Torques from Battery and VBD movement -- MAK
 %
 % pos_batt = battery position relative to the centriod   
-% CG_batt 
+% CG_batt =
 % rho_oil = [value] % density of the oil in the bladder this is a constant
 % F_batt = force battery exerts
 % CG_VBD = (-1.69)
@@ -176,7 +176,7 @@ Torques = [Mp; Mq; Mr];
 % ang_acc = angular acceleration -- can be calculated with domega/dtime
 % will add atsp 
 %
-% T_batt = F_VBD * CG_VBD
+% T_VBD = F_VBD * CG_VBD
 % T_pitch = F_batt * ( pos_batt - CG_batt)
 % T_roll = 0.5 * m_total * (r_batt)^2 * ang_acc
 %
