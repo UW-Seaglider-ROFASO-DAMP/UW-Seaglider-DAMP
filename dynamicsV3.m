@@ -52,6 +52,8 @@ Jf = params.Jf; % 3x3 added mass inertia matrix, should be changed later?
 Js = params.Js; % 3x3 stationary mass inertia matrix
 ms = params.Ms; % stationary mass
 
+m_total = ms + mbat; % total mass of the seaglider (ms will change with damage cases)
+
 % Kappa = [number] % compressibility factor -- MAK
 % Tau = [number]  % Volumetric expansion, im not sure where to get this and if it constant -- MAK
 % Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK
@@ -94,6 +96,7 @@ end
 
 % Note: we CAN change this to include full rho=f(P,T,S) formula
 %       using sensor data.
+% Mak and Geenadie have found some matlab functions that take in P, T, and S that we will see if we can implement 
 
 % Total displaced volume & mass
 Vol_disp = Vol_VBD + Vol_static;
@@ -132,7 +135,7 @@ M = ms*eye(3) + Mf; % masses
 J = Js + Jf; % inertias
 
 % Bouyancy approximation from masses
-m0 = ms + mbat - m_disp;
+% m0 = ms + mbat - m_disp; pretty sure we not using this anymore
 
 %% Forces & Coefs
 
