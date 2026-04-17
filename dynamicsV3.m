@@ -57,13 +57,14 @@ m_total = ms + mbat; % total mass of the seaglider (ms will change with damage c
 % Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
 % Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
 % PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
-% Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK
+% Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK     DONT NEED THIS IS VOL_DISP
 % Volume = Vol_hull * exp(-(Kappa * P - tau * T)) -- MAK
 
 % % To (possibly) be added later:
 % water_v = params.water_v; % water current velocity from model/forecast?
 % water_h = params.water_heading; % water current direction model/forecast?
 % salt = params.salt; % salinity contesnt of water from sensor?
+% T0 = params.ambtemp; % ambient surface temp of water 
 % T = params.temp; % temperature
 % P = params.pressure; % pressure from ct sail?
 
@@ -141,7 +142,7 @@ J = Js + Jf; % inertias
 %% Forces & Coefs
 
 % Dynamic Pressure
-Q = 0.5 * rho * V^2;
+q = 0.5 * rho * V^2;
 
 % Setting out of bounds angles to final angle in array (give em the clamps)
 alpha_clamp = min(max(alpha, min(alphas)), max(alphas));
@@ -157,9 +158,9 @@ Cyaw   = interp2(betas,alphas,Cyaws,beta_clamp,alpha_clamp,'linear');
 % Note: Force coefs are probably in the wind frame, converting that next
 
 % Hydrodynamic forces in wind frame
-L = Q * CL * S; % lift
-D = Q * CD * S; % drag
-Y = Q * CY * S; % side
+L = q * CL * S; % lift
+D = q * CD * S; % drag
+Y = q * CY * S; % side
 F_w = [-D; Y; -L];
 
 
@@ -177,9 +178,9 @@ g_b = DCM_gb *[0;0;g];
 %% Moments (torques)
 
 % Hydrodynamic moments (torques)
-Mp = Q * Croll * cbar * S; % roll moment
-Mq = Q * Cpitch * cbar * S; % pitch moment
-Mr = Q * Cyaw * cbar * S; % yaw moment
+Mp = q * Croll * cbar * S; % roll moment
+Mq = q * Cpitch * cbar * S; % pitch moment
+Mr = q * Cyaw * cbar * S; % yaw moment
 Torques = [Mp; Mq; Mr]; 
 
 % Torques from Battery and VBD movement -- MAK
