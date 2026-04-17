@@ -54,8 +54,9 @@ ms = params.Ms; % stationary mass
 
 m_total = ms + mbat; % total mass of the seaglider (ms will change with damage cases)
 
-% Kappa = [number] % compressibility factor -- MAK
-% Tau = [number]  % Volumetric expansion, im not sure where to get this and if it constant -- MAK
+% Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
+% Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
+% PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
 % Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK
 % Volume = Vol_hull * exp(-(Kappa * P - tau * T)) -- MAK
 
