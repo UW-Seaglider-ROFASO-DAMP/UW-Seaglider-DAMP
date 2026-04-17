@@ -58,7 +58,7 @@ m_total = ms + mbat; % total mass of the seaglider (ms will change with damage c
 % Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
 % PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
 % Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK     DONT NEED THIS IS VOL_DISP
-% Volume = Vol_hull * exp(-(Kappa * P - tau * T)) -- MAK
+% Volume = Vol_hull * exp(-(Kappa * P - tau * T-T0)) -- MAK
 
 % % To (possibly) be added later:
 % water_v = params.water_v; % water current velocity from model/forecast?
@@ -98,7 +98,7 @@ end
 
 % Note: we CAN change this to include full rho=f(P,T,S) formula
 %       using sensor data.
-% Mak and Geenadie have found some matlab functions that take in P, T, and S that we will see if we can implement 
+% Mak and Geenadie have found some matlab functions that take in P, T, and salt (salinity) that we will see if we can implement 
 
 % Total displaced volume & mass
 Vol_disp = Vol_VBD + Vol_static;
