@@ -22,4 +22,30 @@ bestSimErr = inf;
 
 % span from 0% to 100% of surfaces remaining
 span_range = 0:1:100
+
+%looping through every damage case
+for n=spanRange
+    %scaling wing damage
+    scale_wing =  1 / (1 + (1 + 99*(n/100))/100);
+    %scaling for simulated fault case
+    DT_n_wing = DT_t * scale_Wing;
+    %error
+    err_wing = mean(abs((DT_n_wing - MI_t) ./ MI_t) * 100, 'all', 'omitnan');
+
+    %same but for rudder
+    scale_rudder = 1 / (1 + (2 * (1 + 99*(n/100)))/100);
+    DT_n_rudder = DT_t * scale_rudder;
+    err_rudder = mean(abs((DT_n_rudder - MI_t) ./ MI_t) * 100, 'all', 'omitnan');
+
+    %identifying lowest %error
+    if err_wing < bestSimErr
+        bestSimErr = err_wing; 
+        BestMatch.SimPath = struct('Type',"Rudder",'SpanRemaining',n,'Err',err_wing);
+    end
+
+    if err_rudder < bestSimErr
+        bestSimErr = err_rudder; 
+        BestMatch.SimPath = struct('Type',"Rudder",'SpanRemaining',n,'Err',err_rudder);
+    end
+end
 %% Yellow (Historical Vs Field)
