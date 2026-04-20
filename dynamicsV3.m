@@ -35,7 +35,7 @@ z = X(12); % z distance (depth) in Glide Path frame
 % Unpacking control input
 x_bat = U(1); % battery pos down x axis (in body frame)
 phi_bat = U(2); % battery roll angle
-% VBD_pos = U(3); % VBD position to be used later 
+VBD_ctlAD = U(3); % oil count in the VBD pump in AD
 
 
 
@@ -46,7 +46,7 @@ heading_desired = deg2rad(params.heading_desired); % desired heading for dive
 rpbat = params.rpbat; % distance from x axis to cg of battery (in YZ plane)
 mbat = params.mbat; % battery pack mass
 Vol_static = params.Vstatic; % displaced volume w/o VBD
-Vol_VBD = params.VolVBD; % placeholder VBD volume
+% Vol_VBD = params.VolVBD; % placeholder VBD volume
 Mf = params.Mf; % 3x3 added mass matrix, should be changed later?
 Jf = params.Jf; % 3x3 added mass inertia matrix, should be changed later?
 Js = params.Js; % 3x3 stationary mass inertia matrix
@@ -86,26 +86,6 @@ rp = [x_bat; rpbat * sind(phi_bat) ; rpbat * cosd(phi_bat) ];
 skew = @(v) [0 -v(3) v(2); v(3) 0 -v(1); -v(2) v(1) 0];
 rpx = skew(rp); % 3x3 cross product matrix for rp
 
-% Seawater density linear approximation from: 
-% https://mason.gmu.edu/~bklinger/seawater.pdf
-if z < 0
-    rho = 1.225;
-else
-    rho = z/1000 * (1032.8 - 1028.1) + 1028.1;
-end
-% Stopping the Seaglider from floating in air :)
-
-
-% Note: we CAN change this to include full rho=f(P,T,S) formula
-%       using sensor data.
-% Mak and Geenadie have found some matlab functions that take in P, T, and salt (salinity) that we will see if we can implement 
-
-% Total displaced volume & mass
-Vol_disp = Vol_VBD + Vol_static;
-m_disp = Vol_disp * rho;
-
-% Gravity
-g = 9.81;
 
 %% Translational velocity, alpha, beta
 
@@ -165,7 +145,33 @@ F_w = [-D; Y; -L];
 
 
 % Buoyancy Force -- MAK
-% B = g * (rho * Volume - m_total) 
+
+% Seawater density linear approximation from: 
+% https://mason.gmu.edu/~bklinger/seawater.pdf
+if z < 0
+    rho = 1.225;
+else
+    rho = z/1000 * (1032.8 - 1028.1) + 1028.1;
+end
+% Stopping the Seaglider from floating in air :)
+
+% Note: we CAN change this to include full rho=f(P,T,S) formula
+%       using sensor data.
+% Mak and Geenadie have found some matlab functions that take in P, T, and salt (salinity) that we will see if we can implement 
+
+
+
+% Total displaced volume & mass
+VBD_ctlcc = VBD_ctlAD * -0.2453        % converting VBD_ctl from AD to cm^3, VBD_ctlAD is control input
+Vol_blad = -VBD_ctlcc + 1426.7;        % oil volume in bladder (cm^3)
+Vol_disp = Vol_blad + Vol_static;
+
+m_disp = Vol_disp * rho;
+
+% Gravity
+g = 9.81;
+
+B = g * (rho * Volume - m_total) 
 
 % Wind -> body -> glide frames
 DCM_bw = dcmbody2wind(alpha*pi/180,beta*pi/180); % <3 aerospace toolbox
