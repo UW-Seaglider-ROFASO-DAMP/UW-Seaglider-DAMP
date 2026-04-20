@@ -51,22 +51,21 @@ Mf = params.Mf; % 3x3 added mass matrix, should be changed later?
 Jf = params.Jf; % 3x3 added mass inertia matrix, should be changed later?
 Js = params.Js; % 3x3 stationary mass inertia matrix
 ms = params.Ms; % stationary mass
+salt = params.salt; % salinity contesnt of water from sensor?
+T0 = params.ambtemp; % ambient surface temp of water 
+T = params.temp; % temperature
+P = params.pressure; % pressure from ct sail?
 
-m_total = ms + mbat; % total mass of the seaglider (ms will change with damage cases)
-
-% Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
-% Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
-% PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
-% Vol_hull = Vol_static + Vol_VBD  % Volume of the hull -- MAK     DONT NEED THIS IS VOL_DISP
-% Volume = Vol_hull * exp(-(Kappa * P - tau * T-T0)) -- MAK
-
-% % To (possibly) be added later:
+% current model to add later 
 % water_v = params.water_v; % water current velocity from model/forecast?
 % water_h = params.water_heading; % water current direction model/forecast?
-% salt = params.salt; % salinity contesnt of water from sensor?
-% T0 = params.ambtemp; % ambient surface temp of water 
-% T = params.temp; % temperature
-% P = params.pressure; % pressure from ct sail?
+
+Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
+Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
+% PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
+
+
+
 
 % Unpacking coefficients
 alphas = coefs.alphas; % 1 x M vector of alphas used in wind tunnel test
@@ -146,31 +145,31 @@ F_w = [-D; Y; -L];
 
 % Buoyancy Force -- MAK
 
-% Seawater density linear approximation from: 
-% https://mason.gmu.edu/~bklinger/seawater.pdf
+% Seawater density linear approximation from:  https://mason.gmu.edu/~bklinger/seawater.pdf
+
 if z < 0
-    rho = 1.225;
+    rho = 1.225;        % Stopping the Seaglider from floating in air 
 else
     rho = z/1000 * (1032.8 - 1028.1) + 1028.1;
 end
-% Stopping the Seaglider from floating in air :)
 
-% Note: we CAN change this to include full rho=f(P,T,S) formula
-%       using sensor data.
+
+% Note: we CAN change this to include full rho=f(P,T,S) formula using sensor data.
 % Mak and Geenadie have found some matlab functions that take in P, T, and salt (salinity) that we will see if we can implement 
 
-
+m_total = ms + mbat;       % total mass of the seaglider (ms will change with damage cases)
 
 % Total displaced volume & mass
 VBD_ctlcc = VBD_ctlAD * -0.2453        % converting VBD_ctl from AD to cm^3, VBD_ctlAD is control input
 Vol_blad = -VBD_ctlcc + 1426.7;        % oil volume in bladder (cm^3)
 Vol_disp = Vol_blad + Vol_static;
-
+Volume = Vol_disp * exp(-(Kappa * P - tau * T-T0)) -- MAK
 m_disp = Vol_disp * rho;
 
 % Gravity
-g = 9.81;
+g = 9.81;  % m/s^2
 
+% buoyancy equation 
 B = g * (rho * Volume - m_total) 
 
 % Wind -> body -> glide frames
@@ -190,25 +189,18 @@ Mr = q * Cyaw * cbar * S; % yaw moment
 Torques = [Mp; Mq; Mr]; 
 
 % Torques from Battery and VBD movement -- MAK
-%
+
 % pos_batt = battery position relative to the centriod   
 % CG_batt =
 % rho_oil = [value] % density of the oil in the bladder this is a constant
 % F_batt = force battery exerts
 % CG_VBD = (-1.69)
 % F_VBD = g * Vol_VBD * (rho - rho_oil)
-%
-% 
-%
 % r_batt = radius of glider
 % ang_acc = angular acceleration -- can be calculated with domega/dtime
-% will add atsp 
-%
 % T_VBD = F_VBD * CG_VBD
 % T_pitch = F_batt * ( pos_batt - CG_batt)
 % T_roll = 0.5 * m_total * (r_batt)^2 * ang_acc
-%
-%
 
 
 % Euler-rate vector in rad/s
