@@ -42,6 +42,7 @@ VBD_ctlAD = U(3); % oil count in the VBD pump in AD
 % Unpacking parameters
 S = params.S; % wing surface area
 cbar = params.cbar; % wing MAC
+b = params.b; % wing span
 heading_desired = deg2rad(params.heading_desired); % desired heading for dive
 rpbat = params.rpbat; % distance from x axis to cg of battery (in YZ plane)
 mbat = params.mbat; % battery pack mass
@@ -183,9 +184,9 @@ g_b = DCM_gb *[0;0;g];
 %% Moments (torques)
 
 % Hydrodynamic moments (torques)
-Mp = q * Croll * cbar * S; % roll moment
-Mq = q * Cpitch * cbar * S; % pitch moment
-Mr = q * Cyaw * cbar * S; % yaw moment
+Mp = Q * Croll * b * S; % roll moment
+Mq = Q * Cpitch * cbar * S; % pitch moment
+Mr = Q * Cyaw * b * S; % yaw moment
 Torques = [Mp; Mq; Mr]; 
 
 % Torques from Battery and VBD movement -- MAK
