@@ -40,32 +40,41 @@ VBD_ctlAD = U(3); % oil count in the VBD pump in AD
 
 
 % Unpacking parameters
+
+% Target information
+heading_desired = deg2rad(params.heading_desired); % desired heading for dive
+
+% Aerodynamic surfaces properties
 S = params.S; % wing surface area
 cbar = params.cbar; % wing MAC
 b = params.b; % wing span
-heading_desired = deg2rad(params.heading_desired); % desired heading for dive
+
+% Glider properties
+% Battery
 rpbat = params.rpbat; % distance from x axis to cg of battery (in YZ plane)
 mbat = params.mbat; % battery pack mass
+
+% Whole glider
 Vol_static = params.Vstatic; % displaced volume w/o VBD
-% Vol_VBD = params.VolVBD; % placeholder VBD volume
+% Vol_VBD = params.VolVBD; % placeholder VBD volume, Reason for removal: added as a control input
 Mf = params.Mf; % 3x3 added mass matrix, should be changed later?
 Jf = params.Jf; % 3x3 added mass inertia matrix, should be changed later?
 Js = params.Js; % 3x3 stationary mass inertia matrix
 ms = params.Ms; % stationary mass
+Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
+Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
+% PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
+
+% Ocean properties
+% rho = params.rho  % density of ocean from CT sail
 salt = params.salt; % salinity contesnt of water from sensor?
 T0 = params.ambtemp; % ambient surface temp of water 
 T = params.temp; % temperature
 P = params.pressure; % pressure from ct sail?
 
-% current model to add later 
+% Current model to add later 
 % water_v = params.water_v; % water current velocity from model/forecast?
 % water_h = params.water_heading; % water current direction model/forecast?
-
-Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
-Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
-% PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
-
-
 
 
 % Unpacking coefficients
@@ -117,7 +126,7 @@ M = ms*eye(3) + Mf; % masses
 J = Js + Jf; % inertias
 
 % Bouyancy approximation from masses
-% m0 = ms + mbat - m_disp; pretty sure we not using this anymore
+% m0 = ms + mbat - m_disp; not using it because decided to use Charlie's model for Buoyancy
 
 %% Forces & Coefs
 
@@ -146,50 +155,53 @@ F_w = [-D; Y; -L];
 
 % Buoyancy Force -- MAK
 
-% Seawater density linear approximation from:  https://mason.gmu.edu/~bklinger/seawater.pdf
-
+% Density
 if z < 0
     rho = 1.225;        % Stopping the Seaglider from floating in air 
+    % set this to density_0 from nc files
 else
     rho = z/1000 * (1032.8 - 1028.1) + 1028.1;
+    % Seawater density linear approximation from:  https://mason.gmu.edu/~bklinger/seawater.pdf
+    % Once DT code is done, change this to rho = params.rho from CT sail data
 end
-
 
 % Note: we CAN change this to include full rho=f(P,T,S) formula using sensor data.
 % Mak and Geenadie have found some matlab functions that take in P, T, and salt (salinity) that we will see if we can implement 
 
-m_total = ms + mbat;       % total mass of the seaglider (ms will change with damage cases)
 
 % Total displaced volume & mass
 VBD_ctlcc = VBD_ctlAD * -0.2453        % converting VBD_ctl from AD to cm^3, VBD_ctlAD is control input
 Vol_blad = -VBD_ctlcc + 1426.7;        % oil volume in bladder (cm^3)
-Vol_disp = Vol_blad + Vol_static;
+Vol_disp = Vol_blad + Vol_static;      % total volume displaced 
 Volume = Vol_disp * exp(-(Kappa * P - tau * T-T0)) -- MAK
-m_disp = Vol_disp * rho;
+m_total = ms + mbat;       % total mass of the seaglider (ms will change with damage cases)
+% m_disp = Vol_disp * rho;             % Not being used
 
 % Gravity
 g = 9.81;  % m/s^2
 
+% Gravity in body frame
+g_b = DCM_gb *[0;0;g];
+
 % buoyancy equation 
-B = g * (rho * Volume - m_total) 
+B = g_b * (m_total - rho * Volume) 
 
 % Wind -> body -> glide frames
 DCM_bw = dcmbody2wind(alpha*pi/180,beta*pi/180); % <3 aerospace toolbox
 DCM_wb = DCM_bw.'; % wind to body from inverse
 Fb_aero = DCM_wb * F_w; % aero force wind to body
 
-% Gravity in body frame
-g_b = DCM_gb *[0;0;g];
+
 
 %% Moments (torques)
 
 % Hydrodynamic moments (torques)
-Mp = Q * Croll * b * S; % roll moment
-Mq = Q * Cpitch * cbar * S; % pitch moment
-Mr = Q * Cyaw * b * S; % yaw moment
+Mp = q * Croll * b * S; % roll moment
+Mq = q * Cpitch * cbar * S; % pitch moment
+Mr = q * Cyaw * b * S; % yaw moment
 Torques = [Mp; Mq; Mr]; 
 
-% Torques from Battery and VBD movement -- MAK
+% Torques from Battery and VBD movement -- MAK, Not used because moment coefficients obtained from wind tunnel testing
 
 % pos_batt = battery position relative to the centriod   
 % CG_batt =
