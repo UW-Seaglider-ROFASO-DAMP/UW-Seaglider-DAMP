@@ -61,13 +61,14 @@ Mf = params.Mf; % 3x3 added mass matrix, should be changed later?
 Jf = params.Jf; % 3x3 added mass inertia matrix, should be changed later?
 Js = params.Js; % 3x3 stationary mass inertia matrix
 ms = params.Ms; % stationary mass
+
 Kappa = 5.529e-06 % compressibility factor, number from Dr. Charlie Erikson Paper-- MAK
 Tau = 7.05e-05 % Volumetric expansion, number from Dr. Charlie Erikson Paper -- MAK 
 % PAPER: Assessing Seaglider Model-Based Position Accuracy on an Acoustic Tracking Range
 
 % Ocean properties
 % rho = params.rho  % density of ocean from CT sail
-salt = params.salt; % salinity contesnt of water from sensor?
+% salt = params.salt; % salinity contesnt of water from sensor?
 T0 = params.ambtemp; % ambient surface temp of water 
 T = params.temp; % temperature
 P = params.pressure; % pressure from ct sail?
