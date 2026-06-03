@@ -1,0 +1,172 @@
+function Nom_Sim_Matrix = Digital_Twin(Mission_Data_Matrix, coefs, params)
+% DIGITAL_TWIN
+%
+% Runs dynamicsV4 row-by-row.
+%
+% Mission data units:
+%   eng_depth      = cm
+%   vert_speed_gsm = cm/s
+%   density        = kg/m^3
+%   pressure       = pressure from NC file
+%
+% Internal dynamics units:
+%   depth          = m
+%   vertical speed = m/s
+%   density        = kg/m^3
+
+%% Separate headers and numeric data
+headers = strtrim(string(Mission_Data_Matrix(1,:)));
+data = cell2mat(Mission_Data_Matrix(2:end,:));
+
+numRows = size(data,1);
+
+%% Find required columns
+timeIdx  = findColumn(headers, ["eng_elaps_t", "eng_elaps_t_0000"]);
+depthIdx = findColumn(headers, ["eng_depth"]);
+headIdx  = findColumn(headers, ["eng_head"]);
+
+pitchIdx = findColumn(headers, ["eng_pitchAng", "pitchAng", "pitchANG"]);
+rollIdx  = findColumn(headers, ["eng_rollAng", "rollAng", "rollANG"]);
+
+pitchCtlIdx = findColumn(headers, ["eng_pitchCtl", "pitchCtl"]);
+rollCtlIdx  = findColumn(headers, ["eng_rollCtl", "rollCtl"]);
+vbdIdx       = findColumn(headers, ["eng_vbdCC", "vbdCC"]);
+
+vertIdx     = findColumn(headers, ["vert_speed_gsm"]);
+densityIdx  = findColumn(headers, ["density"]);
+pressureIdx = findColumn(headers, ["pressure"]);
+tempIdx     = findColumn(headers, ["temperature", "temp"]);
+
+headingDesiredIdx = findColumn(headers, ...
+    ["$MHEAD_RNG_PITCHd_Wd", "MHEAD_RNG_PITCHd_Wd", "log_MHEAD_RNG_PITCHd_Wd"]);
+
+%% Error checks
+if isempty(timeIdx), error("Missing time column."); end
+if isempty(depthIdx), error("Missing depth column."); end
+if isempty(headIdx), error("Missing heading column."); end
+if isempty(pitchIdx), error("Missing pitch angle column."); end
+if isempty(rollIdx), error("Missing roll angle column."); end
+if isempty(pitchCtlIdx), error("Missing pitch control column."); end
+if isempty(rollCtlIdx), error("Missing roll control column."); end
+if isempty(vbdIdx), error("Missing VBD column."); end
+if isempty(vertIdx), error("Missing vertical speed column."); end
+if isempty(densityIdx), error("Missing density column."); end
+if isempty(pressureIdx), error("Missing pressure column."); end
+if isempty(headingDesiredIdx), error("Missing desired heading column."); end
+
+%% Create output matrix
+Nom_Sim_Matrix = Mission_Data_Matrix;
+
+%% State vector
+% X = [phidot; thetadot; headingdot; phi; theta; heading; u; v; w; x; y; z]
+%
+% X(7)  = horizontal velocity, m/s
+% X(8)  = lateral velocity, m/s
+% X(9)  = vertical velocity, m/s
+% X(12) = depth, m
+
+X = zeros(12,1);
+
+X(1) = 0;
+X(2) = 0;
+X(3) = 0;
+
+X(4) = data(1, rollIdx);
+X(5) = data(1, pitchIdx);
+X(6) = data(1, headIdx);
+
+% Initial velocity states
+X(7) = 0.1;
+X(8) = 0;
+
+% Real vertical speed is cm/s. Convert to m/s.
+X(9) = data(1, vertIdx) / 100;
+
+% Real depth is cm. Convert to m.
+X(10) = 0;
+X(11) = 0;
+X(12) = data(1, depthIdx) / 100;
+
+
+%% Loop through mission rows
+for k = 1:numRows
+
+        dt = data(k+1,timeIdx) - data(k,timeIdx);
+
+    %% Update parameters from mission data
+    params.heading_desired = data(k, headingDesiredIdx);
+    params.pressure = data(k, pressureIdx);
+    params.rho = data(k, densityIdx);
+    params.temp = data(k, tempIdx);
+    
+
+    %% Control inputs
+
+    % eng_pitchCtl appears to already be in cm.
+    % Convert cm to m.
+    pitchCtl_cm = data(k, pitchCtlIdx);
+    x_bat = pitchCtl_cm / 100;
+
+    % rollCtl appears already small and usable as an angle input.
+    phi_bat = data(k, rollCtlIdx);
+
+    % eng_vbdCC is already in cc.
+    vbdCC = data(k, vbdIdx);
+
+    % dynamicsV4 should now interpret U(3) as cc, not AD counts.
+    U = [x_bat; phi_bat; vbdCC];
+
+end 
+
+
+    %% Dynamics update
+    dt = mdmat(fin,2) - mdmat(start,2);
+
+    [t, X] = ode45(@(t,X) dynamicsV4(X, U, coefs, params), [0 dt], X0);
+
+
+
+
+    %% Save simulated values
+
+    Nom_Sim_Matrix{k+1, pitchIdx} = X(5);
+    Nom_Sim_Matrix{k+1, rollIdx}  = X(4);
+    Nom_Sim_Matrix{k+1, headIdx}  = X(6);
+
+    % Convert m/s back to cm/s
+    Nom_Sim_Matrix{k+1, vertIdx} = X(9) * 100;
+
+    % Convert m back to cm
+    Nom_Sim_Matrix{k+1, depthIdx} = X(12) * 100;
+
+end
+
+%% Display summary
+fprintf('\n====================================\n');
+fprintf('Nominal Simulation Matrix Created\n');
+fprintf('====================================\n');
+fprintf('Rows simulated: %d\n', numRows);
+fprintf('Updated columns:\n');
+fprintf(' - %s\n', headers(pitchIdx));
+fprintf(' - %s\n', headers(rollIdx));
+fprintf(' - %s\n', headers(headIdx));
+fprintf(' - %s in cm/s\n', headers(vertIdx));
+fprintf(' - %s in cm\n', headers(depthIdx));
+fprintf('====================================\n');
+
+end
+
+%% Helper function
+function idx = findColumn(headers, possibleNames)
+
+idx = [];
+
+for i = 1:length(possibleNames)
+    idx = find(strcmpi(headers, possibleNames(i)), 1);
+
+    if ~isempty(idx)
+        return;
+    end
+end
+
+end
