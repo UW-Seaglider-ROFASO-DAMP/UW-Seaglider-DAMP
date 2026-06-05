@@ -21,7 +21,7 @@ Running this code will allow the user to run a diagnosis on the Seaglider's cond
 - 50% Rudder
 
 # Credits
-AA 2026 Capstone Members:  
+AA 2026 Capstone Contributors:  
 - Jordan Cummings  
 - Henry Hong  
 - Holland Kantner  
