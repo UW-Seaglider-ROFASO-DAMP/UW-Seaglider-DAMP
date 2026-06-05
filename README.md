@@ -14,7 +14,7 @@ You also will need to have the .log and .nc files transmitted from the Seaglider
 
 The main script that will be used is DAP_Main_Full_System_Test.m, which utilizes functions of the other code files to run together.  
 
-Running this code will allow the user to run a diagnosis on the Seaglider's condition depending on the dive data submitted from the four following conditions:
+Running this code will allow the user to run a diagnosis on the Seaglider's condition depending on the dive data submitted from the four following conditions as of June 4th, 2026:
 - Nominal
 - 25% Wing
 - 50% Wing
